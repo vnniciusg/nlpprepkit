@@ -1,0 +1,19 @@
+[project]
+name = "textpreproc"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "black>=25.1.0",
+    "contractions>=0.1.73",
+    "emoji>=2.14.1",
+    "nltk>=3.9.1",
+    "pytest>=8.3.5",
+    "spacy>=3.8.4",
+    "typing-extensions>=4.12.2",
+]
+
+
+[tool.black]
+line-length = 400
