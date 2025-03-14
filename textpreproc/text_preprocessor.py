@@ -14,6 +14,7 @@ import unicodedata
 from pathlib import Path
 from typing import List, Optional, Union
 from dataclasses import dataclass, field
+from concurrent.futures import ProcessPoolExecutor
 
 import spacy
 import emoji
@@ -38,7 +39,7 @@ class CleaningConfig:
     tokenize: bool = True
     remove_stopwords: bool = True
     stemming: bool = False
-    lemmatization: bool = False,
+    lemmatization: bool = True
     normalize_unicode: bool = True
     language: str = "english"
     custom_stopwords: List[str] = field(default_factory=list)
@@ -178,17 +179,25 @@ class TextPreprocessor:
 
         return text
 
-    def process_texts(self, texts: List[str]) -> List[str]:
+    def process_texts(self, texts: List[str], max_workes: Optional[int] = None) -> List[str]:
         """
         process a list of texts in parallel.
 
         Args:
             texts (List[str]): a list of texts to be processed.
+            max_workes (Optional[int]): the number of workers to use for parallel processing.
 
         Returns:
             List[str]: a list of cleaned texts.
         """
-        return [self.clean_text(text) for text in texts]
+        if len(texts) <= 1:
+            self.logger.warning("only one text provided. processing sequentially.")
+            return [self.clean_text(text) for text in texts]
+
+        with ProcessPoolExecutor(max_workes) as executor:
+            results = list(executor.map(self.clean_text, texts))
+
+        return results
 
     def _expand_contractions(self, text: str) -> str:
         """expand contractions in the text."""
