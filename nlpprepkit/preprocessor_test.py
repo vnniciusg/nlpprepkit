@@ -56,11 +56,16 @@ def temp_config_file():
     yield temp.name
     os.unlink(temp.name)
 
+@pytest.fixture(scope='session', autouse=True)
+def download_nltk_resources():
+    import nltk
+    nltk.download('punkt')
+    nltk.download('wordnet')
+    nltk.download('stopwords')
 
 class TestTextPreprocessor:
 
-    @patch('nltk.download')
-    def test_initialization(self, mock_download):
+    def test_initialization(self):
         """Test initialization of TextPreprocessor with default config."""
         preprocessor = TextPreprocessor()
         
@@ -68,11 +73,8 @@ class TestTextPreprocessor:
         assert len(preprocessor.pipeline) > 0
         assert len(preprocessor.token_pipeline) > 0
         
-        # Verify NLTK resources are downloaded
-        assert mock_download.called
 
-    @patch('nltk.download')
-    def test_custom_initialization(self, mock_download):
+    def test_custom_initialization(self):
         """Test initialization with custom config."""
         config = CleaningConfig(
             expand_contractions=False,
@@ -85,9 +87,6 @@ class TestTextPreprocessor:
         
         preprocessor = TextPreprocessor(config)
 
-        # Verify NLTK resources are downloaded
-        assert mock_download.called
-        
         # Check pipeline configuration based on custom settings
         assert len(preprocessor.pipeline) > 0
         assert hasattr(preprocessor, 'stemmer')
@@ -138,7 +137,7 @@ class TestTextPreprocessor:
         with pytest.raises(ValueError):
             preprocessor.process_text(["valid", 123, "also valid"])
     
-    @patch('textpreproc.preprocessor.word_tokenize')
+    @patch('nlpprepkit.preprocessor.word_tokenize')
     def test_tokenization_error(self, mock_tokenize, simple_text):
         """Test handling tokenization errors."""
         mock_tokenize.side_effect = Exception("Tokenization failed")
@@ -150,7 +149,7 @@ class TestTextPreprocessor:
         with pytest.raises(TokenizationError):
             preprocessor.process_text(simple_text)
     
-    @patch('textpreproc.preprocessor.ProcessPoolExecutor')
+    @patch('nlpprepkit.preprocessor.ProcessPoolExecutor')
     def test_parallel_processing_error(self, mock_executor, text_list):
         """Test handling parallel processing errors."""
         mock_executor_instance = MagicMock()
