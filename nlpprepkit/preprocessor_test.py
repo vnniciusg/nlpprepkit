@@ -84,6 +84,9 @@ class TestTextPreprocessor:
         )
         
         preprocessor = TextPreprocessor(config)
+
+        # Verify NLTK resources are downloaded
+        assert mock_download.called
         
         # Check pipeline configuration based on custom settings
         assert len(preprocessor.pipeline) > 0
