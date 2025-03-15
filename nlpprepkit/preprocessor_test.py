@@ -67,7 +67,6 @@ class TestTextPreprocessor:
         assert len(preprocessor.pipeline) > 0
         assert len(preprocessor.token_pipeline) > 0
         
-
     def test_custom_initialization(self):
         """Test initialization with custom config."""
         config = CleaningConfig(

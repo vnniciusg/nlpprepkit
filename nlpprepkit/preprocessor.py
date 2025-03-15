@@ -74,7 +74,7 @@ class TextPreprocessor(TextPreprocessorInterface):
 
     def _dowload_nltk_resources(self):
         """download required nltk resources."""
-
+        
         for resource in self.config.nltk_resources:
             try:
                 nltk.data.find(f"tokenizers/{resource}" if resource == "punkt" else f"corpora/{resource}")
@@ -82,6 +82,16 @@ class TextPreprocessor(TextPreprocessorInterface):
             except LookupError:
                 self.logger.info(f"Downloading NLTK resource '{resource}'...")
                 nltk.download(resource)
+                
+                try:
+                    nltk.data.find(f"tokenizers/{resource}" if resource == "punkt" else f"corpora/{resource}")
+                    self.logger.debug(f"NLTK resource '{resource}' downloaded successfully.")
+                except LookupError:
+                    self.logger.warning(f"NLTK resource '{resource}' could not be found after download attempt.")
+                    nltk_data_path = os.path.expanduser("~/nltk_data")
+                    if nltk_data_path not in nltk.data.path:
+                        nltk.data.path.append(nltk_data_path)
+                        self.logger.debug(f"Added {nltk_data_path} to NLTK data path")
 
     def _initialize_resources(self):
         """initialize resources for text preprocessing."""

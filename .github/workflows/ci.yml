@@ -28,14 +28,5 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[dev]
 
-      - name: Download NLTK resources
-        run: |
-          mkdir -p ~/nltk_data
-          chmod -R 777 ~/nltk_data
-
-          python -c "import nltk; nltk.download('punkt', download_dir='~/nltk_data'); nltk.download('wordnet', download_dir='~/nltk_data'); nltk.download('stopwords', download_dir='~/nltk_data')"
-
-          python -c "import nltk; nltk.data.path.append('~/nltk_data'); print('NLTK resources found:', nltk.data.path)"
-
       - name: Run tests
         run: pytest
