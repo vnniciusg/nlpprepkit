@@ -25,7 +25,7 @@ from tqdm import tqdm
 from .model import CleaningConfig
 from . import functions as F
 from .exceptions import SerializationError, TokenizationError, InputError, ParallelProcessingError
-
+from .utils import generate_cache_key
 
 class TextPreprocessorInterface(ABC):
 
@@ -231,6 +231,10 @@ class TextPreprocessor(TextPreprocessorInterface):
         if not text:
             self.logger.warning("empty text provided.")
             return ""
+        
+        cache_key = generate_cache_key(text, self.config)
+        if self._cache_enabled and cache_key in self._cache:
+            return self._cache[cache_key]
 
         for func in self.pipeline:
             text = func(text)
@@ -251,6 +255,10 @@ class TextPreprocessor(TextPreprocessorInterface):
                 text = " ".join(tokens)
             except Exception as e:
                 raise TokenizationError("failed to tokenize text.") from e
+
+        self._cache[cache_key] = text
+        if self._cache_enabled and len(self._cache) > self._cache_max_size:
+            self._cache.popitem(last=False)
 
         return text
 

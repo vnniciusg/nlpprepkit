@@ -2,7 +2,7 @@ import hashlib
 import json
 from dataclasses import asdict
 
-from model import CleaningConfig
+from .model import CleaningConfig
 
 def generate_cache_key(text: str, config: CleaningConfig) -> str:
     """generate cache key based on text and cleaning config
