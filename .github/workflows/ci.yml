@@ -1,4 +1,4 @@
-name: CI - Test
+name: CI
 
 on:
   push:
@@ -28,7 +28,6 @@ jobs:
           python -m pip install --upgrade pip
 
           pip install .[dev]
-          pip install build
 
       - name: Run tests
         run: pytest
