@@ -56,6 +56,11 @@ def temp_config_file():
     yield temp.name
     os.unlink(temp.name)
 
+@pytest.fixture(autouse=True)
+def mock_nltk_downloads():
+    with patch('nlpprepkit.preprocessor.nltk.download') as mock_download:
+        yield mock_download
+
 
 class TestTextPreprocessor:
 
