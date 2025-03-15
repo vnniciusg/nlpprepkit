@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import List
 import logging
 
-from exceptions import ConfigurationError
+from .exceptions import ConfigurationError
 
 
 @dataclass
@@ -89,12 +89,12 @@ class CleaningConfig:
         # check if min_word_length and max_word_length are integers and valid
         if not isinstance(self.min_word_length, int):
             errors.append(f"min_word_length must be an integer, got {type(self.min_word_length).__name__}")
-        elif self.min_word_length < 1:
+        elif isinstance(self.min_word_length, int) and self.min_word_length < 1:
             errors.append("min_word_length must be greater than 0")
 
         if not isinstance(self.max_word_length, int):
             errors.append(f"max_word_length must be an integer, got {type(self.max_word_length).__name__}")
-        elif self.max_word_length < self.min_word_length:
+        elif isinstance(self.max_word_length, int) and isinstance(self.min_word_length, int) and self.max_word_length < self.min_word_length:
             errors.append("max_word_length must be greater than min_word_length")
 
         # check if log_level is a valid logging level

@@ -24,16 +24,11 @@ try:
 except ImportError:
     missing_deps.append("emoji")
 
-try:
-    import spacy
-except ImportError:
-    missing_deps.append("spacy")
-
 if missing_deps:
     deps_str = ", ".join(missing_deps)
     install_cmd = f"pip install {' '.join(missing_deps)}"
     uv_cmd = f"uv add {' '.join(missing_deps)}"
-    
+
     error_msg = (
         f"Missing required dependencies: {deps_str}\n\n"
         f"Please install them using one of the following commands:\n"
@@ -41,9 +36,26 @@ if missing_deps:
         f"- Using uv: {uv_cmd}\n\n"
         f"Or install all dependencies with: pip install -r requirements.txt"
     )
-    
+
     raise ImportError(error_msg)
 
-from .preprocessor import TextPreprocessor, CleaningConfig
+from .preprocessor import TextPreprocessor
+from .model import CleaningConfig
+from .functions import *
+from .exceptions import *
 
-__all__ = ["TextPreprocessor", "CleaningConfig"]
+__all__ = [
+    "TextPreprocessor",
+    "CleaningConfig",
+    "expand_contractions",
+    "lowercase",
+    "remove_urls",
+    "remove_newlines",
+    "remove_numbers",
+    "normalize_unicode",
+    "remove_punctuation",
+    "remove_emojis",
+    "remove_stopwords",
+    "stemming",
+    "lemmatization",
+]
