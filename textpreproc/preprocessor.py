@@ -13,7 +13,7 @@ import json
 import logging
 import unicodedata
 from pathlib import Path
-from typing import List, Optional, Union, overload
+from typing import List, Optional, Union, Dict, Callable, overload
 from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor
 
@@ -26,15 +26,86 @@ from nltk.stem import PorterStemmer, WordNetLemmatizer
 
 from model import CleaningConfig
 
-# TODO: add buildin exceptions
-# TODO: add library to register the steps to process texts
-# TODO: add cache if the text is already processed and the configuration is the same
+
+class ProcessingStepRegistry:
+    """register the steps to process texts."""
+
+    _text_processors: Dict[str, Callable[[str], str]] = {}
+    _token_processors: Dict[str, Callable[[List[str]], List[str]]] = {}
+
+    @classmethod
+    def register_text_processor(cls, name: str, func: Optional[Callable] = None):
+        """
+        register a text processing step.
+
+        Args:
+            name (str): the name of the processing step.
+            func (Optional[Callable]): the function to be registered.
+        """
+
+        def wrapper(func):
+            cls._text_processors[name] = func
+            return func
+
+        if func is None:
+            return wrapper
+
+        cls._text_processors[name] = func
+        return func
+
+    @classmethod
+    def register_token_processor(cls, name: str, func: Optional[Callable] = None):
+        """
+        register a token processing step.
+
+        Args:
+            name (str): the name of the processing step.
+            func (Optional[Callable]): the function to be registered.
+        """
+
+        def wrapper(func):
+            cls._token_processors[name] = func
+            return func
+
+        if func is None:
+            return wrapper
+
+        cls._token_processors[name] = func
+        return func
+
+    @classmethod
+    def get_text_processor(cls, name: str) -> Callable[[str], str]:
+        """get a registered text processor function."""
+        if name not in cls._text_processors:
+            raise ValueError(f"text processor '{name}' not found.")
+
+        return cls._text_processors[name]
+
+    @classmethod
+    def get_token_processor(cls, name: str) -> Callable[[List[str]], List[str]]:
+        """get a registered token processor function."""
+        if name not in cls._token_processors:
+            raise ValueError(f"token processor '{name}' not found.")
+
+        return cls._token_processors
+
+    @classmethod
+    def list_text_processors(cls) -> List[str]:
+        """list all registered text processors."""
+        return list(cls._text_processors.keys())
+
+    @classmethod
+    def list_token_processors(cls) -> List[str]:
+        """list all registered token processors."""
+        return list(cls._token_processors.keys())
 
 
 class TextPreprocessorInterface(ABC):
 
     @abstractmethod
-    def process_text(self, text: Union[str, List[str]], max_workers: Optional[int] = None, batch_size: int = 10000) -> Union[str, List[str]]:
+    def process_text(
+        self, text: Union[str, List[str]], max_workers: Optional[int] = None, batch_size: int = 10000
+    ) -> Union[str, List[str]]:
         pass
 
     @abstractmethod
@@ -54,6 +125,10 @@ class TextPreprocessor(TextPreprocessorInterface):
     this class provides methods for various text preprocessing tasks including contraction expansion,
     lowercasing, removing URLs and more.
     """
+
+    _cache: Dict[str, str] = {}
+    _cache_enabled: bool = True
+    _cache_max_size: int = 1000
 
     def __init__(self, config: Optional[CleaningConfig] = None):
         """
@@ -105,39 +180,52 @@ class TextPreprocessor(TextPreprocessorInterface):
         self.pipeline = []
 
         if self.config.expand_contractions:
-            self.pipeline.append(self._expand_contractions)
+            self.pipeline.append(ProcessingStepRegistry.get_text_processor("expand_contractions"))
 
         if self.config.lowercase:
-            self.pipeline.append(self._lowercase)
+            self.pipeline.append(ProcessingStepRegistry.get_text_processor("lowercase"))
 
         if self.config.remove_urls:
-            self.pipeline.append(self._remove_urls)
+            self.pipeline.append(ProcessingStepRegistry.get_text_processor("remove_urls"))
 
         if self.config.remove_newlines:
-            self.pipeline.append(self._remove_newlines)
+            self.pipeline.append(ProcessingStepRegistry.get_text_processor("remove_newlines"))
 
         if self.config.remove_numbers:
-            self.pipeline.append(self._remove_numbers)
+            self.pipeline.append(ProcessingStepRegistry.get_text_processor("remove_numbers"))
 
         if self.config.normalize_unicode:
-            self.pipeline.append(self._normalize_unicode)
+            self.pipeline.append(ProcessingStepRegistry.get_text_processor("normalize_unicode"))
 
         if self.config.remove_punctuation:
-            self.pipeline.append(self._remove_punctuation)
+            self.pipeline.append(ProcessingStepRegistry.get_text_processor("remove_punctuation"))
 
         if self.config.remove_emojis:
-            self.pipeline.append(self._remove_emojis)
+            self.pipeline.append(ProcessingStepRegistry.get_text_processor("remove_emojis"))
 
         self.token_pipeline = []
 
         if self.config.remove_stopwords and "stopwords" in self.config.nltk_resources:
-            self.token_pipeline.append(self._remove_stopwords)
+            self.token_pipeline.append(ProcessingStepRegistry.get_token_processor("remove_stopwords"))
 
         if self.config.stemming:
-            self.token_pipeline.append(self._stemming)
+            self.token_pipeline.append(ProcessingStepRegistry.get_token_processor("stemming"))
 
         if self.config.lemmatization and "wordnet" in self.config.nltk_resources:
-            self.token_pipeline.append(self._lemmatization)
+            self.token_pipeline.append(ProcessingStepRegistry.get_token_processor("lemmatization"))
+
+    @classmethod
+    def enable_cache(cls, enabled: bool = True, max_size: int = 1000):
+        """enable or disable caching of processed texts."""
+        cls._cache_enabled = enabled
+        cls._cache_max_size = max_size
+        if enabled:
+            cls._cache.clear()
+
+    @classmethod
+    def clear_cache(cls):
+        """clear the cache of processed texts."""
+        cls._cache.clear()
 
     @overload
     def process_text(self, text: str, max_workers: Optional[int] = None, batch_size: int = 10000) -> str: ...
@@ -145,7 +233,9 @@ class TextPreprocessor(TextPreprocessorInterface):
     @overload
     def process_text(self, text: List[str], max_workers: Optional[int] = None, batch_size: int = 10000) -> List[str]: ...
 
-    def process_text(self, text: Union[str, List[str]], max_workers: Optional[int] = None, batch_size: int = 10000) -> Union[str, List[str]]:
+    def process_text(
+        self, text: Union[str, List[str]], max_workers: Optional[int] = None, batch_size: int = 10000
+    ) -> Union[str, List[str]]:
         """
         process a list of texts in parallel.
 
@@ -221,46 +311,57 @@ class TextPreprocessor(TextPreprocessorInterface):
 
         return text
 
+    @ProcessingStepRegistry.register_text_processor("expand_contractions")
     def _expand_contractions(self, text: str) -> str:
         """expand contractions in the text."""
         return contractions.fix(text)
 
+    @ProcessingStepRegistry.register_text_processor("lowercase")
     def _lowercase(self, text: str) -> str:
         """convert text to lowercase."""
         return text.lower()
 
+    @ProcessingStepRegistry.register_text_processor("remove_urls")
     def _remove_urls(self, text: str) -> str:
         """remove URLs from the text"""
         return re.sub(r"https?://\S+|www\.\S+", "", text)
 
+    @ProcessingStepRegistry.register_text_processor("remove_newlines")
     def _remove_newlines(self, text: str) -> str:
         """remove newlines from the text."""
         return re.sub(r"\n", "", text)
 
+    @ProcessingStepRegistry.register_text_processor("remove_numbers")
     def _remove_numbers(self, text: str) -> str:
         """remove numbers from the text."""
         return re.sub(r"\d+", "", text)
 
+    @ProcessingStepRegistry.register_text_processor("normalize_unicode")
     def _normalize_unicode(self, text: str) -> str:
         """normalize unicode characters in the text."""
         return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("utf-8", "ignore")
 
+    @ProcessingStepRegistry.register_text_processor("remove_punctuation")
     def _remove_punctuation(self, text: str) -> str:
         """remove punctuation from the text."""
         return re.sub(r"[^\w\s]", "", text)
 
+    @ProcessingStepRegistry.register_text_processor("remove_emojis")
     def _remove_emojis(self, text: str) -> str:
         """remove emojis from the text."""
         return emoji.replace_emoji(text, replace="")
 
+    @ProcessingStepRegistry.register_token_processor("remove_stopwords")
     def _remove_stopwords(self, tokens: List[str]) -> List[str]:
         """remove stopwords from the tokens."""
         return [token for token in tokens if token not in self.stopwords]
 
+    @ProcessingStepRegistry.register_token_processor("stemming")
     def _stemming(self, tokens: List[str]) -> List[str]:
         """apply stemming to the tokens."""
         return [self.stemmer.stem(token) for token in tokens]
 
+    @ProcessingStepRegistry.register_token_processor("lemmatization")
     def _lemmatization(self, tokens: List[str]) -> List[str]:
         """apply lemmatization to the tokens."""
         return [self.lemmatizer.lemmatize(token) for token in tokens]
