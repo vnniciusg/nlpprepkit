@@ -29,9 +29,5 @@ jobs:
 
           pip install .[dev]
 
-      - name: Download NLTK data explicitly
-        run: |
-          python -c "import nltk; nltk.download('wordnet'); nltk.download('punkt'); nltk.download('stopwords'); nltk.download('omw-1.4')"
-
       - name: Run tests
         run: pytest
