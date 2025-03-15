@@ -15,15 +15,16 @@ from typing import List, Optional, Union, Dict, overload
 from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor
 
-import tqdm
+
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer, WordNetLemmatizer
+from tqdm import tqdm
 
-from model import CleaningConfig
-import functions as F
-from exceptions import SerializationError, TokenizationError, InputError, ParallelProcessingError
+from .model import CleaningConfig
+from . import functions as F
+from .exceptions import SerializationError, TokenizationError, InputError, ParallelProcessingError
 
 
 class TextPreprocessorInterface(ABC):
@@ -132,13 +133,22 @@ class TextPreprocessor(TextPreprocessorInterface):
         self.token_pipeline = []
 
         if self.config.remove_stopwords and "stopwords" in self.config.nltk_resources:
-            self.token_pipeline.append(F.remove_stopwords)
+            self.token_pipeline.append({
+                "func": F.remove_stopwords,
+                "args": {"stopwords": self.stopwords}
+            })
 
         if self.config.stemming:
-            self.token_pipeline.append(F.stemming)
+            self.token_pipeline.append({
+                "func": F.stemming,
+                "args": {"stemmer": self.stemmer}
+            })
 
         if self.config.lemmatization and "wordnet" in self.config.nltk_resources:
-            self.token_pipeline.append(F.lemmatization)
+            self.token_pipeline.append({
+                "func": F.lemmatization,
+                "args": {"lemmatizer": self.lemmatizer}
+            })
 
     @classmethod
     def enable_cache(cls, enabled: bool = True, max_size: int = 1000):
@@ -229,11 +239,14 @@ class TextPreprocessor(TextPreprocessorInterface):
             try:
                 tokens = word_tokenize(text)
 
-                if self.config.min_word_length > 1:
-                    tokens = [token for token in tokens if len(token) >= self.config.min_word_length]
+                if self.config.min_word_length > 1 and self.config.max_word_length > 1:
+                    tokens = [token for token in tokens if len(token) >= self.config.min_word_length and len(token) <= self.config.max_word_length]
 
-                for func in self.token_pipeline:
-                    tokens = func(tokens)
+                for pipeline_item in self.token_pipeline:
+                    func = pipeline_item["func"]
+                    params = pipeline_item["args"]
+
+                    tokens = func(tokens, **params)
 
                 text = " ".join(tokens)
             except Exception as e:
