@@ -31,7 +31,7 @@ jobs:
           pip install .[dev]
 
       - name: Download NLTK Wordnet
-        run: python -c "import nltk; nltk.download('wordnet')"
+        run: python -c "import nltk; nltk.download('wordnet'); nltk.download('punkt'); nltk.download('stopwords')"
 
       - name: Run tests
         run: pytest
