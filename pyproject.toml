@@ -1,20 +1,16 @@
 [project]
-name = "textpreproc"
+name = "textpreprocessor"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "black>=25.1.0",
+    "build>=1.2.2.post1",
     "contractions>=0.1.73",
     "emoji>=2.14.1",
     "nltk>=3.9.1",
     "pytest>=8.3.5",
-    "spacy>=3.8.4",
+    "setuptools>=76.0.0",
     "tqdm>=4.67.1",
-    "typing-extensions>=4.12.2",
+    "twine>=6.1.0",
 ]
-
-
-[tool.black]
-line-length = 140
