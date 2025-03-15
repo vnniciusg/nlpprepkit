@@ -16,12 +16,6 @@ class InputError(TextPreprocessorError):
     pass
 
 
-class ResourceError(TextPreprocessorError):
-    """exception raised for errors with external resources."""
-
-    pass
-
-
 class TokenizationError(TextPreprocessorError):
     """exception raised for errors during tokenization."""
 

@@ -884,6 +884,7 @@ dependencies = [
     { name = "nltk" },
     { name = "pytest" },
     { name = "spacy" },
+    { name = "tqdm" },
     { name = "typing-extensions" },
 ]
 
@@ -895,6 +896,7 @@ requires-dist = [
     { name = "nltk", specifier = ">=3.9.1" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "spacy", specifier = ">=3.8.4" },
+    { name = "tqdm", specifier = ">=4.67.1" },
     { name = "typing-extensions", specifier = ">=4.12.2" },
 ]
 

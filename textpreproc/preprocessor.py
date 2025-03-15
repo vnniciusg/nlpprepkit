@@ -17,6 +17,7 @@ from typing import List, Optional, Union, Dict, Callable, overload
 from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor
 
+import tqdm
 import emoji
 import contractions
 import nltk
@@ -25,79 +26,8 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 
 from model import CleaningConfig
-
-
-class ProcessingStepRegistry:
-    """register the steps to process texts."""
-
-    _text_processors: Dict[str, Callable[[str], str]] = {}
-    _token_processors: Dict[str, Callable[[List[str]], List[str]]] = {}
-
-    @classmethod
-    def register_text_processor(cls, name: str, func: Optional[Callable] = None):
-        """
-        register a text processing step.
-
-        Args:
-            name (str): the name of the processing step.
-            func (Optional[Callable]): the function to be registered.
-        """
-
-        def wrapper(func):
-            cls._text_processors[name] = func
-            return func
-
-        if func is None:
-            return wrapper
-
-        cls._text_processors[name] = func
-        return func
-
-    @classmethod
-    def register_token_processor(cls, name: str, func: Optional[Callable] = None):
-        """
-        register a token processing step.
-
-        Args:
-            name (str): the name of the processing step.
-            func (Optional[Callable]): the function to be registered.
-        """
-
-        def wrapper(func):
-            cls._token_processors[name] = func
-            return func
-
-        if func is None:
-            return wrapper
-
-        cls._token_processors[name] = func
-        return func
-
-    @classmethod
-    def get_text_processor(cls, name: str) -> Callable[[str], str]:
-        """get a registered text processor function."""
-        if name not in cls._text_processors:
-            raise ValueError(f"text processor '{name}' not found.")
-
-        return cls._text_processors[name]
-
-    @classmethod
-    def get_token_processor(cls, name: str) -> Callable[[List[str]], List[str]]:
-        """get a registered token processor function."""
-        if name not in cls._token_processors:
-            raise ValueError(f"token processor '{name}' not found.")
-
-        return cls._token_processors
-
-    @classmethod
-    def list_text_processors(cls) -> List[str]:
-        """list all registered text processors."""
-        return list(cls._text_processors.keys())
-
-    @classmethod
-    def list_token_processors(cls) -> List[str]:
-        """list all registered token processors."""
-        return list(cls._token_processors.keys())
+import functions as F
+from exceptions import SerializationError, TokenizationError, InputError, ParallelProcessingError
 
 
 class TextPreprocessorInterface(ABC):
@@ -180,39 +110,39 @@ class TextPreprocessor(TextPreprocessorInterface):
         self.pipeline = []
 
         if self.config.expand_contractions:
-            self.pipeline.append(ProcessingStepRegistry.get_text_processor("expand_contractions"))
+            self.pipeline.append(F.expand_contractions)
 
         if self.config.lowercase:
-            self.pipeline.append(ProcessingStepRegistry.get_text_processor("lowercase"))
+            self.pipeline.append(F.lowercase)
 
         if self.config.remove_urls:
-            self.pipeline.append(ProcessingStepRegistry.get_text_processor("remove_urls"))
+            self.pipeline.append(F.remove_urls)
 
         if self.config.remove_newlines:
-            self.pipeline.append(ProcessingStepRegistry.get_text_processor("remove_newlines"))
+            self.pipeline.append(F.remove_newlines)
 
         if self.config.remove_numbers:
-            self.pipeline.append(ProcessingStepRegistry.get_text_processor("remove_numbers"))
+            self.pipeline.append(F.remove_numbers)
 
         if self.config.normalize_unicode:
-            self.pipeline.append(ProcessingStepRegistry.get_text_processor("normalize_unicode"))
+            self.pipeline.append(F.normalize_unicode)
 
         if self.config.remove_punctuation:
-            self.pipeline.append(ProcessingStepRegistry.get_text_processor("remove_punctuation"))
+            self.pipeline.append(F.remove_punctuation)
 
         if self.config.remove_emojis:
-            self.pipeline.append(ProcessingStepRegistry.get_text_processor("remove_emojis"))
+            self.pipeline.append(F.remove_emojis)
 
         self.token_pipeline = []
 
         if self.config.remove_stopwords and "stopwords" in self.config.nltk_resources:
-            self.token_pipeline.append(ProcessingStepRegistry.get_token_processor("remove_stopwords"))
+            self.token_pipeline.append(F.remove_stopwords)
 
         if self.config.stemming:
-            self.token_pipeline.append(ProcessingStepRegistry.get_token_processor("stemming"))
+            self.token_pipeline.append(F.stemming)
 
         if self.config.lemmatization and "wordnet" in self.config.nltk_resources:
-            self.token_pipeline.append(ProcessingStepRegistry.get_token_processor("lemmatization"))
+            self.token_pipeline.append(F.lemmatization)
 
     @classmethod
     def enable_cache(cls, enabled: bool = True, max_size: int = 1000):
@@ -248,13 +178,9 @@ class TextPreprocessor(TextPreprocessorInterface):
         """
 
         if not text:
-            raise ValueError("empty text provided.")
-
-        if max_workers is None:
-            max_workers = min(32, os.cpu_count() + 4)
-
+            raise InputError("empty text provided.")
         if not isinstance(text, (str, list)):
-            raise ValueError("text must be a string or a list of strings.")
+            raise InputError("text must be a string or a list of strings.")
 
         if isinstance(text, str):
             self.logger.warning("only one text provided. processing sequentially.")
@@ -263,12 +189,18 @@ class TextPreprocessor(TextPreprocessorInterface):
         if not all(isinstance(t, str) for t in text):
             raise ValueError("all elements in the list must be strings.")
 
-        results = []
-        for i in range(0, len(text), batch_size):
-            batch = text[i : i + batch_size]
-
-            with ProcessPoolExecutor(max_workers=max_workers) as executor:
-                results.extend(list(executor.map(self._clean_text, batch)))
+        self.logger.info(f"processing {len(text)} texts with {max_workers or 'default'} workers...")
+        try:
+            with ProcessPoolExecutor(max_workers=max_workers or min(32, os.cpu_count() + 4)) as executor:
+                results = list(
+                    tqdm(
+                        executor.map(self._clean_text, text, chunksize=batch_size),
+                        total=len(text),
+                        desc="Processing texts",
+                    )
+                )
+        except Exception as e:
+            raise ParallelProcessingError("failed to process texts.") from e
 
         return results
 
@@ -288,8 +220,7 @@ class TextPreprocessor(TextPreprocessorInterface):
                 text = str(text)
                 self.logger.warning(f"input text converted to string: {text}")
             except Exception as e:
-                self.logger.error(f"failed to convert text to string: {e}")
-                return ""
+                raise InputError("failed to convert input text to string.") from e
 
         if not text:
             self.logger.warning("empty text provided.")
@@ -299,72 +230,20 @@ class TextPreprocessor(TextPreprocessorInterface):
             text = func(text)
 
         if self.config.tokenize:
-            tokens = word_tokenize(text)
+            try:
+                tokens = word_tokenize(text)
 
-            if self.config.min_word_length > 1:
-                tokens = [token for token in tokens if len(token) >= self.config.min_word_length]
+                if self.config.min_word_length > 1:
+                    tokens = [token for token in tokens if len(token) >= self.config.min_word_length]
 
-            for func in self.token_pipeline:
-                tokens = func(tokens)
+                for func in self.token_pipeline:
+                    tokens = func(tokens)
 
-            text = " ".join(tokens)
+                text = " ".join(tokens)
+            except Exception as e:
+                raise TokenizationError("failed to tokenize text.") from e
 
         return text
-
-    @ProcessingStepRegistry.register_text_processor("expand_contractions")
-    def _expand_contractions(self, text: str) -> str:
-        """expand contractions in the text."""
-        return contractions.fix(text)
-
-    @ProcessingStepRegistry.register_text_processor("lowercase")
-    def _lowercase(self, text: str) -> str:
-        """convert text to lowercase."""
-        return text.lower()
-
-    @ProcessingStepRegistry.register_text_processor("remove_urls")
-    def _remove_urls(self, text: str) -> str:
-        """remove URLs from the text"""
-        return re.sub(r"https?://\S+|www\.\S+", "", text)
-
-    @ProcessingStepRegistry.register_text_processor("remove_newlines")
-    def _remove_newlines(self, text: str) -> str:
-        """remove newlines from the text."""
-        return re.sub(r"\n", "", text)
-
-    @ProcessingStepRegistry.register_text_processor("remove_numbers")
-    def _remove_numbers(self, text: str) -> str:
-        """remove numbers from the text."""
-        return re.sub(r"\d+", "", text)
-
-    @ProcessingStepRegistry.register_text_processor("normalize_unicode")
-    def _normalize_unicode(self, text: str) -> str:
-        """normalize unicode characters in the text."""
-        return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("utf-8", "ignore")
-
-    @ProcessingStepRegistry.register_text_processor("remove_punctuation")
-    def _remove_punctuation(self, text: str) -> str:
-        """remove punctuation from the text."""
-        return re.sub(r"[^\w\s]", "", text)
-
-    @ProcessingStepRegistry.register_text_processor("remove_emojis")
-    def _remove_emojis(self, text: str) -> str:
-        """remove emojis from the text."""
-        return emoji.replace_emoji(text, replace="")
-
-    @ProcessingStepRegistry.register_token_processor("remove_stopwords")
-    def _remove_stopwords(self, tokens: List[str]) -> List[str]:
-        """remove stopwords from the tokens."""
-        return [token for token in tokens if token not in self.stopwords]
-
-    @ProcessingStepRegistry.register_token_processor("stemming")
-    def _stemming(self, tokens: List[str]) -> List[str]:
-        """apply stemming to the tokens."""
-        return [self.stemmer.stem(token) for token in tokens]
-
-    @ProcessingStepRegistry.register_token_processor("lemmatization")
-    def _lemmatization(self, tokens: List[str]) -> List[str]:
-        """apply lemmatization to the tokens."""
-        return [self.lemmatizer.lemmatize(token) for token in tokens]
 
     def save_config(self, file_path: Union[str, Path]) -> None:
         """
@@ -375,13 +254,15 @@ class TextPreprocessor(TextPreprocessorInterface):
         """
 
         file_path = Path(file_path)
-
         config_dict = {k: v if not isinstance(v, list) else list(v) for k, v in self.config.__dict__.items()}
 
-        with file_path.open("w") as file:
-            json.dump(config_dict, file, indent=4)
-
-        self.logger.info(f"configuration saved to {file_path}")
+        try:
+            with file_path.open("w") as file:
+                json.dump(config_dict, file, indent=4)
+            self.logger.info(f"configuration saved to {file_path}")
+        except Exception as e:
+            self.logger.error(f"failed to save configuration to file: {e}")
+            raise SerializationError("failed to save configuration to file.") from e
 
     @classmethod
     def from_config_file(cls, file_path: Union[str, Path]) -> "TextPreprocessor":
@@ -395,11 +276,13 @@ class TextPreprocessor(TextPreprocessorInterface):
             TextPreprocessor: an instance of TextPreprocessor class.
         """
 
-        with open(file_path, "r") as file:
-            config_dict = json.load(file)
-
-        config = CleaningConfig(**config_dict)
-        return cls(config)
+        try:
+            with open(file_path, "r") as file:
+                config_dict = json.load(file)
+            config = CleaningConfig(**config_dict)
+            return cls(config)
+        except Exception as e:
+            raise SerializationError("failed to load configuration from file.") from e
 
     def _setup_logging(self):
         """setup logging for the class."""
