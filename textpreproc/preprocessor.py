@@ -8,15 +8,15 @@ removing URLs and more.
 
 import logging.config
 import re
+import os
 import json
 import logging
 import unicodedata
 from pathlib import Path
-from typing import List, Optional, Union
-from dataclasses import dataclass, field
+from typing import List, Optional, Union, overload
+from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor
 
-import spacy
 import emoji
 import contractions
 import nltk
@@ -24,33 +24,30 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 
+from model import CleaningConfig
 
-@dataclass
-class CleaningConfig:
-    """configuration for text cleaning operations."""
-
-    expand_contractions: bool = True
-    lowercase: bool = True
-    remove_urls: bool = True
-    remove_newlines: bool = True
-    remove_numbers: bool = True
-    remove_punctuation: bool = True
-    remove_emojis: bool = True
-    tokenize: bool = True
-    remove_stopwords: bool = True
-    stemming: bool = False
-    lemmatization: bool = True
-    normalize_unicode: bool = True
-    language: str = "english"
-    custom_stopwords: List[str] = field(default_factory=list)
-    keep_words: List[str] = field(default_factory=list)
-    min_word_length: int = 2
-    max_word_length: int = 15
-    nltk_resources: List[str] = field(default_factory=lambda: ["punkt", "wordnet", "stopwords"])
-    log_level: int = logging.INFO
+# TODO: add buildin exceptions
+# TODO: add library to register the steps to process texts
+# TODO: add cache if the text is already processed and the configuration is the same
 
 
-class TextPreprocessor:
+class TextPreprocessorInterface(ABC):
+
+    @abstractmethod
+    def process_text(self, text: Union[str, List[str]], max_workers: Optional[int] = None, batch_size: int = 10000) -> Union[str, List[str]]:
+        pass
+
+    @abstractmethod
+    def save_config(self, file_path: Union[str, Path]) -> None:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_config_file(cls, file_path: Union[str, Path]) -> "TextPreprocessor":
+        pass
+
+
+class TextPreprocessor(TextPreprocessorInterface):
     """
     a class for cleaning and preprocessing text data>
 
@@ -75,6 +72,7 @@ class TextPreprocessor:
 
     def _dowload_nltk_resources(self):
         """download required nltk resources."""
+
         for resource in self.config.nltk_resources:
             try:
                 nltk.data.find(f"tokenizers/{resource}" if resource == "punkt" else f"corpora/{resource}")
@@ -100,13 +98,6 @@ class TextPreprocessor:
 
         if self.config.stemming:
             self.stemmer = PorterStemmer()
-
-        if self.config.lemmatization and not self.config.tokenize:
-            try:
-                self.nlp = spacy.load("en_core_web_sm", disable=["parser", "ner"])
-            except OSError:
-                self.logger.warning("spacy model not found. using nltk lemmatizer instead.")
-                self.nlp = None
 
     def _configure_pipeline(self):
         """configure the preprocessing pipeline."""
@@ -148,7 +139,50 @@ class TextPreprocessor:
         if self.config.lemmatization and "wordnet" in self.config.nltk_resources:
             self.token_pipeline.append(self._lemmatization)
 
-    def clean_text(self, text: str) -> str:
+    @overload
+    def process_text(self, text: str, max_workers: Optional[int] = None, batch_size: int = 10000) -> str: ...
+
+    @overload
+    def process_text(self, text: List[str], max_workers: Optional[int] = None, batch_size: int = 10000) -> List[str]: ...
+
+    def process_text(self, text: Union[str, List[str]], max_workers: Optional[int] = None, batch_size: int = 10000) -> Union[str, List[str]]:
+        """
+        process a list of texts in parallel.
+
+        Args:
+            text (Union[str, List[str]]): a single text or a list of texts to be processed.
+            max_workers (Optional[int]): the number of workers to use for parallel processing (default: min(32, os.cpu_count() + 4)).
+            batch_size (int): the number of texts to process in each batch.
+        Returns:
+            Union[str, List[str]]: the cleaned text or a list of cleaned texts.
+        """
+
+        if not text:
+            raise ValueError("empty text provided.")
+
+        if max_workers is None:
+            max_workers = min(32, os.cpu_count() + 4)
+
+        if not isinstance(text, (str, list)):
+            raise ValueError("text must be a string or a list of strings.")
+
+        if isinstance(text, str):
+            self.logger.warning("only one text provided. processing sequentially.")
+            return self._clean_text(text)
+
+        if not all(isinstance(t, str) for t in text):
+            raise ValueError("all elements in the list must be strings.")
+
+        results = []
+        for i in range(0, len(text), batch_size):
+            batch = text[i : i + batch_size]
+
+            with ProcessPoolExecutor(max_workers=max_workers) as executor:
+                results.extend(list(executor.map(self._clean_text, batch)))
+
+        return results
+
+    def _clean_text(self, text: str) -> str:
         """
         clean and preprocess text acccording to the configured pipeline.
 
@@ -159,8 +193,16 @@ class TextPreprocessor:
             str: the cleaned text.
         """
 
-        if not isinstance(text, str) or not text:
-            self.logger.warning("input text is empty or not a string.")
+        if not isinstance(text, str):
+            try:
+                text = str(text)
+                self.logger.warning(f"input text converted to string: {text}")
+            except Exception as e:
+                self.logger.error(f"failed to convert text to string: {e}")
+                return ""
+
+        if not text:
+            self.logger.warning("empty text provided.")
             return ""
 
         for func in self.pipeline:
@@ -178,26 +220,6 @@ class TextPreprocessor:
             text = " ".join(tokens)
 
         return text
-
-    def process_texts(self, texts: List[str], max_workes: Optional[int] = None) -> List[str]:
-        """
-        process a list of texts in parallel.
-
-        Args:
-            texts (List[str]): a list of texts to be processed.
-            max_workes (Optional[int]): the number of workers to use for parallel processing.
-
-        Returns:
-            List[str]: a list of cleaned texts.
-        """
-        if len(texts) <= 1:
-            self.logger.warning("only one text provided. processing sequentially.")
-            return [self.clean_text(text) for text in texts]
-
-        with ProcessPoolExecutor(max_workes) as executor:
-            results = list(executor.map(self.clean_text, texts))
-
-        return results
 
     def _expand_contractions(self, text: str) -> str:
         """expand contractions in the text."""

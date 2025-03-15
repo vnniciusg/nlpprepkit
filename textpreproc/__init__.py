@@ -44,6 +44,6 @@ if missing_deps:
     
     raise ImportError(error_msg)
 
-from .text_preprocessor import TextPreprocessor, CleaningConfig
+from .preprocessor import TextPreprocessor, CleaningConfig
 
 __all__ = ["TextPreprocessor", "CleaningConfig"]
