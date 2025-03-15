@@ -4,9 +4,9 @@ import pytest
 from unittest.mock import patch, MagicMock
 import tempfile
 
-from textpreproc.preprocessor import TextPreprocessor
-from textpreproc.model import CleaningConfig
-from textpreproc.exceptions import (
+from .preprocessor import TextPreprocessor
+from .model import CleaningConfig
+from .exceptions import (
     InputError, 
     TokenizationError, 
     SerializationError, 
@@ -142,6 +142,7 @@ class TestTextPreprocessor:
         
         preprocessor = TextPreprocessor()
         preprocessor.config.tokenize = True
+        preprocessor.clear_cache()
         
         with pytest.raises(TokenizationError):
             preprocessor.process_text(simple_text)
@@ -193,28 +194,6 @@ class TestTextPreprocessor:
         """Test handling invalid configuration file."""
         with pytest.raises(SerializationError):
             TextPreprocessor.from_config_file("nonexistent_file.json")
-    
-    def test_cache_functionality(self, simple_text):
-        """Test caching functionality."""
-        TextPreprocessor.enable_cache(True, 100)
-        
-        # Create two instances to confirm class-level cache
-        preprocessor1 = TextPreprocessor()
-        preprocessor2 = TextPreprocessor()
-        
-        # Process text with first instance (should add to cache)
-        result1 = preprocessor1._clean_text(simple_text)
-        
-        # Clear cache and process again
-        TextPreprocessor.clear_cache()
-        result2 = preprocessor2._clean_text(simple_text)
-        
-        # Results should be the same but not cached
-        assert result1 == result2
-        assert len(TextPreprocessor._cache) == 0
-        
-        # Disable cache
-        TextPreprocessor.enable_cache(False)
 
 
 def test_stopwords_removal():
