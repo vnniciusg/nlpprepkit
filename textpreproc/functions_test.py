@@ -1,4 +1,3 @@
-import pytest
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 from . import functions as F
 
