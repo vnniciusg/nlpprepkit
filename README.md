@@ -1,18 +1,18 @@
-# TextPreproc
+# nlpprepkit
 
 This can't be the best library for text preprocessing, but it's definitely a library!
 
 ## Installation
 
 ```bash
-pip install textpreprocessor
+pip install nlpprepkit
 ```
 
 Or install from source:
 
 ```bash
-git clone https://github.com/yourusername/textpreproc.git
-cd textpreproc
+git clone https://github.com/vnniciusg/nlpprepkit.git
+cd nlpprepkit
 pip install -e .
 ```
 
@@ -27,7 +27,7 @@ pip install -e .
 ## Quick Start
 
 ```python
-from textpreprocessor import TextPreprocessor
+from nlpprepkit import TextPreprocessor
 
 # Create a preprocessor with default settings
 preprocessor = TextPreprocessor()
@@ -48,7 +48,7 @@ results = preprocessor.process_text(texts)
 ## Customizing Configuration
 
 ```python
-from textpreprocessor import TextPreprocessor, CleaningConfig
+from nlpprepkit import TextPreprocessor, CleaningConfig
 
 # Create a custom configuration
 config = CleaningConfig(
