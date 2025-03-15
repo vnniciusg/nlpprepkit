@@ -7,19 +7,15 @@ removing URLs and more.
 """
 
 import logging.config
-import re
 import os
 import json
 import logging
-import unicodedata
 from pathlib import Path
-from typing import List, Optional, Union, Dict, Callable, overload
+from typing import List, Optional, Union, Dict, overload
 from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor
 
 import tqdm
-import emoji
-import contractions
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
