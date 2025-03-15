@@ -1,6 +1,6 @@
 # TextPreproc
 
-This can't be the best library for text preprocessing, but it's definitely a library!.
+This can't be the best library for text preprocessing, but it's definitely a library!
 
 ## Installation
 
