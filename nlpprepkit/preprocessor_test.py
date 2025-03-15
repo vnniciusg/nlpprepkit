@@ -56,12 +56,6 @@ def temp_config_file():
     yield temp.name
     os.unlink(temp.name)
 
-@pytest.fixture(scope='session', autouse=True)
-def download_nltk_resources():
-    import nltk
-    nltk.download('punkt')
-    nltk.download('wordnet')
-    nltk.download('stopwords')
 
 class TestTextPreprocessor:
 
