@@ -1,6 +1,6 @@
 [project]
 name = "nlpprepkit"
-version = "1.0.3"
+version = "1.0.4"
 description = "Text Preprocessing Library"
 readme = "README.md"
 requires-python = ">=3.11"

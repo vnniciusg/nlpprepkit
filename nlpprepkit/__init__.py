@@ -5,7 +5,7 @@ This library provides tools for cleaning and preprocessing text data
 for natural language processing tasks.
 """
 
-__version__ = "0.1.0"
+__version__ = "1.0.4"
 
 missing_deps = []
 
