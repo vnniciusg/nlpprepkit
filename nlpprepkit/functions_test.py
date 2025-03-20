@@ -1,6 +1,7 @@
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 from . import functions as F
 
+
 def test_expand_contractions():
     assert F.expand_contractions("I'm happy") == "I am happy"
     assert F.expand_contractions("I've been there") == "I have been there"
@@ -14,7 +15,9 @@ def test_lower_case():
 
 
 def test_remove_urls():
-    assert F.remove_urls("Visit https://example.com for details.") == "Visit  for details."
+    assert (
+        F.remove_urls("Visit https://example.com for details.") == "Visit  for details."
+    )
     assert F.remove_urls("Check www.example.com") == "Check "
 
 
@@ -59,3 +62,8 @@ def test_lemmatization():
     tokens = ["running", "jumps", "easily"]
     lemmatizer = WordNetLemmatizer()
     assert F.lemmatization(tokens, lemmatizer) == ["running", "jump", "easily"]
+
+
+def test_remove_mentions():
+    text = "Hello @user1, how are you? @user2, did you see that?"
+    assert F.remove_mentions(text) == "Hello , how are you? , did you see that?"

@@ -53,7 +53,11 @@ def normalize_unicode(text: str) -> str:
 
     converts text to its ASCII representation, ignoring non-ASCII characters.
     """
-    return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("utf-8", "ignore")
+    return (
+        unicodedata.normalize("NFKD", text)
+        .encode("ascii", "ignore")
+        .decode("utf-8", "ignore")
+    )
 
 
 def remove_punctuation(text: str) -> str:
@@ -110,3 +114,18 @@ def lemmatization(tokens: List[str], lemmatizer) -> List[str]:
         List[str]: Lemmatized tokens.
     """
     return [lemmatizer.lemmatize(token) for token in tokens]
+
+
+def remove_mentions(text: str) -> str:
+    """
+    remove all the mentions (@username) in the text.
+
+    Args:
+        text (str): the orignal text containing the mentions.
+
+    Returns:
+        str: the text withou mentions.
+    """
+
+    text_cleaned = re.sub(r"@\w+", "", text)
+    return " ".join(text_cleaned.split())

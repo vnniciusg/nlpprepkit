@@ -24,14 +24,23 @@ from tqdm import tqdm
 
 from .model import CleaningConfig
 from . import functions as F
-from .exceptions import SerializationError, TokenizationError, InputError, ParallelProcessingError
+from .exceptions import (
+    SerializationError,
+    TokenizationError,
+    InputError,
+    ParallelProcessingError,
+)
 from .utils import generate_cache_key
+
 
 class TextPreprocessorInterface(ABC):
 
     @abstractmethod
     def process_text(
-        self, text: Union[str, List[str]], max_workers: Optional[int] = None, batch_size: int = 10000
+        self,
+        text: Union[str, List[str]],
+        max_workers: Optional[int] = None,
+        batch_size: int = 10000,
     ) -> Union[str, List[str]]:
         pass
 
@@ -77,7 +86,11 @@ class TextPreprocessor(TextPreprocessorInterface):
 
         for resource in self.config.nltk_resources:
             try:
-                nltk.data.find(f"tokenizers/{resource}" if resource == "punkt" else f"corpora/{resource}")
+                nltk.data.find(
+                    f"tokenizers/{resource}"
+                    if resource == "punkt"
+                    else f"corpora/{resource}"
+                )
                 self.logger.debug(f"NLTK resource '{resource}' already downloaded.")
             except LookupError:
                 self.logger.info(f"Downloading NLTK resource '{resource}'...")
@@ -130,25 +143,25 @@ class TextPreprocessor(TextPreprocessorInterface):
         if self.config.remove_emojis:
             self.pipeline.append(F.remove_emojis)
 
+        if self.config.remove_mentions:
+            self.pipeline.append(F.remove_mentions)
+
         self.token_pipeline = []
 
         if self.config.remove_stopwords and "stopwords" in self.config.nltk_resources:
-            self.token_pipeline.append({
-                "func": F.remove_stopwords,
-                "args": {"stopwords": self.stopwords}
-            })
+            self.token_pipeline.append(
+                {"func": F.remove_stopwords, "args": {"stopwords": self.stopwords}}
+            )
 
         if self.config.stemming:
-            self.token_pipeline.append({
-                "func": F.stemming,
-                "args": {"stemmer": self.stemmer}
-            })
+            self.token_pipeline.append(
+                {"func": F.stemming, "args": {"stemmer": self.stemmer}}
+            )
 
         if self.config.lemmatization and "wordnet" in self.config.nltk_resources:
-            self.token_pipeline.append({
-                "func": F.lemmatization,
-                "args": {"lemmatizer": self.lemmatizer}
-            })
+            self.token_pipeline.append(
+                {"func": F.lemmatization, "args": {"lemmatizer": self.lemmatizer}}
+            )
 
     @classmethod
     def enable_cache(cls, enabled: bool = True, max_size: int = 1000):
@@ -164,13 +177,23 @@ class TextPreprocessor(TextPreprocessorInterface):
         cls._cache.clear()
 
     @overload
-    def process_text(self, text: str, max_workers: Optional[int] = None, batch_size: int = 10000) -> str: ...
+    def process_text(
+        self, text: str, max_workers: Optional[int] = None, batch_size: int = 10000
+    ) -> str: ...
 
     @overload
-    def process_text(self, text: List[str], max_workers: Optional[int] = None, batch_size: int = 10000) -> List[str]: ...
+    def process_text(
+        self,
+        text: List[str],
+        max_workers: Optional[int] = None,
+        batch_size: int = 10000,
+    ) -> List[str]: ...
 
     def process_text(
-        self, text: Union[str, List[str]], max_workers: Optional[int] = None, batch_size: int = 10000
+        self,
+        text: Union[str, List[str]],
+        max_workers: Optional[int] = None,
+        batch_size: int = 10000,
     ) -> Union[str, List[str]]:
         """
         process a list of texts in parallel.
@@ -195,9 +218,13 @@ class TextPreprocessor(TextPreprocessorInterface):
         if not all(isinstance(t, str) for t in text):
             raise ValueError("all elements in the list must be strings.")
 
-        self.logger.info(f"processing {len(text)} texts with {max_workers or 'default'} workers...")
+        self.logger.info(
+            f"processing {len(text)} texts with {max_workers or 'default'} workers..."
+        )
         try:
-            with ProcessPoolExecutor(max_workers=max_workers or min(32, os.cpu_count() + 4)) as executor:
+            with ProcessPoolExecutor(
+                max_workers=max_workers or min(32, os.cpu_count() + 4)
+            ) as executor:
                 results = list(
                     tqdm(
                         executor.map(self._clean_text, text, chunksize=batch_size),
@@ -231,7 +258,7 @@ class TextPreprocessor(TextPreprocessorInterface):
         if not text:
             self.logger.warning("empty text provided.")
             return ""
-        
+
         cache_key = generate_cache_key(text, self.config)
         if self._cache_enabled and cache_key in self._cache:
             return self._cache[cache_key]
@@ -244,7 +271,12 @@ class TextPreprocessor(TextPreprocessorInterface):
                 tokens = word_tokenize(text)
 
                 if self.config.min_word_length > 1 and self.config.max_word_length > 1:
-                    tokens = [token for token in tokens if len(token) >= self.config.min_word_length and len(token) <= self.config.max_word_length]
+                    tokens = [
+                        token
+                        for token in tokens
+                        if len(token) >= self.config.min_word_length
+                        and len(token) <= self.config.max_word_length
+                    ]
 
                 for pipeline_item in self.token_pipeline:
                     func = pipeline_item["func"]
@@ -271,7 +303,10 @@ class TextPreprocessor(TextPreprocessorInterface):
         """
 
         file_path = Path(file_path)
-        config_dict = {k: v if not isinstance(v, list) else list(v) for k, v in self.config.__dict__.items()}
+        config_dict = {
+            k: v if not isinstance(v, list) else list(v)
+            for k, v in self.config.__dict__.items()
+        }
 
         try:
             with file_path.open("w") as file:
@@ -307,7 +342,11 @@ class TextPreprocessor(TextPreprocessorInterface):
             {
                 "version": 1,
                 "disable_existing_loggers": False,
-                "formatters": {"standard": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"}},
+                "formatters": {
+                    "standard": {
+                        "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                    }
+                },
                 "handlers": {
                     "default": {
                         "level": self.config.log_level,

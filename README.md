@@ -126,12 +126,6 @@ results = preprocessor.process_text(
 ## Supported Languages
 
 - English
-- Spanish
-- French
-- German
-- Italian
-- Dutch
-- Portuguese
 
 ## Contributing
 
