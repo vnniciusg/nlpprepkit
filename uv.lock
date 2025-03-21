@@ -369,7 +369,7 @@ wheels = [
 
 [[package]]
 name = "nlpprepkit"
-version = "0.1.1"
+version = "1.0.5"
 source = { virtual = "." }
 dependencies = [
     { name = "contractions" },
@@ -388,7 +388,7 @@ dev = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "twine" },
+    { name = "setuptools-scm" },
 ]
 
 [package.metadata]
@@ -404,7 +404,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "twine", specifier = ">=6.1.0" }]
+dev = [{ name = "setuptools-scm", specifier = ">=8.2.1" }]
 
 [[package]]
 name = "nltk"
@@ -635,6 +635,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/32/d2/7b171caf085ba0d40d8391f54e1c75a1cda9255f542becf84575cfd8a732/setuptools-76.0.0.tar.gz", hash = "sha256:43b4ee60e10b0d0ee98ad11918e114c70701bc6051662a9a675a0496c1a158f4", size = 1349387 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/37/66/d2d7e6ad554f3a7c7297c3f8ef6e22643ad3d35ef5c63bf488bc89f32f31/setuptools-76.0.0-py3-none-any.whl", hash = "sha256:199466a166ff664970d0ee145839f5582cb9bca7a0a3a2e795b6a9cb2308e9c6", size = 1236106 },
+]
+
+[[package]]
+name = "setuptools-scm"
+version = "8.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+    { name = "setuptools" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/98/7d/334fba3c2e30ddb5cb9fca7fb8f883c8093891cd1fb02fcf981f2fc4ca96/setuptools_scm-8.2.1.tar.gz", hash = "sha256:51cfdd1deefc9b8c08d1a61e940a59c4dec39eb6c285d33fa2f1b4be26c7874d", size = 78075 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/55/bf/994a6da3f2a412630feb9d30ab4d35c78985a052ad28e6ee053ac92f00e5/setuptools_scm-8.2.1-py3-none-any.whl", hash = "sha256:0d234a45ca9e4cb7379886b827558d952d1d8f730c3957e7f217b2ec77fe4402", size = 44016 },
 ]
 
 [[package]]

@@ -1,6 +1,6 @@
 [project]
 name = "nlpprepkit"
-version = "1.0.5"
+dynamic = ["version"]
 description = "Text Preprocessing Library"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -20,4 +20,11 @@ dev = [
     "pytest>=8.3.5",
     "setuptools>=76.0.0",
     "twine>=6.1.0",
+    "setuptools-scm>=8.2.1",
 ]
+
+[tool.setuptools_scm]
+
+[build-system]
+requires = ["setuptools>=76.0.0", "setuptools-scm>=8.0.0"]
+build-backend = "setuptools.build_meta"
