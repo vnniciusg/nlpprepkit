@@ -25,7 +25,7 @@ dev = [
 
 [tool.setuptools_scm]
 local_scheme = "no-local-version"
-version_scheme = "post-release"
+version_scheme = "release-branch-semver"
 
 [build-system]
 requires = ["setuptools>=76.0.0", "setuptools-scm>=8.0.0"]
