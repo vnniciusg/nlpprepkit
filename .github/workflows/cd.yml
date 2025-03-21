@@ -38,4 +38,4 @@ jobs:
 
       - name: Publish to PyPI
         run: |
-          uv publish --username __token__ --password $PYPI_API_TOKEN
+          uv publish --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}
