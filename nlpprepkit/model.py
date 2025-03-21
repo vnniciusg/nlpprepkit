@@ -20,7 +20,7 @@ class CleaningConfig:
     tokenize: bool = True
     remove_stopwords: bool = True
     stemming: bool = False
-    lemmatization: bool = True
+    lemmatization: bool = False
     normalize_unicode: bool = True
     language: str = "english"
     custom_stopwords: List[str] = field(default_factory=list)

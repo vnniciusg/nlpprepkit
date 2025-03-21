@@ -122,6 +122,9 @@ class TextPreprocessor(TextPreprocessorInterface):
         if self.config.expand_contractions:
             self.pipeline.append(F.expand_contractions)
 
+        if self.config.remove_mentions:
+            self.pipeline.append(F.remove_mentions)
+
         if self.config.lowercase:
             self.pipeline.append(F.lowercase)
 
@@ -142,9 +145,6 @@ class TextPreprocessor(TextPreprocessorInterface):
 
         if self.config.remove_emojis:
             self.pipeline.append(F.remove_emojis)
-
-        if self.config.remove_mentions:
-            self.pipeline.append(F.remove_mentions)
 
         self.token_pipeline = []
 

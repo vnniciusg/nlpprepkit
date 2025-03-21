@@ -18,7 +18,7 @@ def test_default_config():
     assert config.tokenize is True
     assert config.remove_stopwords is True
     assert config.stemming is False
-    assert config.lemmatization is True
+    assert config.lemmatization is False
     assert config.normalize_unicode is True
     assert config.language == "english"
     assert config.custom_stopwords == []
