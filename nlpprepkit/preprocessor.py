@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import List, Optional, Union, Dict, overload
 from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor
+from collections import OrderedDict
 
 
 import nltk
@@ -62,7 +63,7 @@ class TextPreprocessor(TextPreprocessorInterface):
     lowercasing, removing URLs and more.
     """
 
-    _cache: Dict[str, str] = {}
+    _cache: Dict[str, str] = OrderedDict()
     _cache_enabled: bool = True
     _cache_max_size: int = 1000
 
