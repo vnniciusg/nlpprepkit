@@ -5,7 +5,6 @@ description = "Text Preprocessing Library"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "nltk>=3.9.1",
     "tqdm>=4.67.1",
 ]
 authors = [

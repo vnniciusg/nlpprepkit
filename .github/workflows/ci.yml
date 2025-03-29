@@ -11,27 +11,30 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      NLTK_DATA: $HOME/nltk_data
-    strategy:
-      matrix:
-        python-version: ["3.11"]
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/checkout@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          fetch-depth: 0
 
-      - name: Upgrade pip and install dependencies
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build tools
         run: |
-          python -m pip install --upgrade pip
-          pip install .[dev]
+          python -m pip install --upgrade uv
 
-      - name: Download NLTK Wordnet
-        run: python -c "import nltk; nltk.download('wordnet'); nltk.download('punkt_tab'); nltk.download('stopwords')"
+      - name: Create and activate virtual environment
+        run: |
+          uv venv
+          source .venv/bin/activate
+
+      - name: Install dependencies
+        run: |
+          uv add pytest
 
       - name: Run tests
         run: pytest
