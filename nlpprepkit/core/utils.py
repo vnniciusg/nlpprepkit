@@ -1,3 +1,5 @@
+"""This module contains utility functions and classes for logging and profiling."""
+
 import time
 import logging
 from functools import wraps
@@ -29,13 +31,21 @@ def setup_logging(logger_name: str, log_level: str = "INFO") -> logging.Logger:
 
 
 class ProfilingDecorator:
-    """Decorator para coletar métricas de performance em funções de processamento"""
+    """This class is a decorator for profiling functions. It collects metrics such as execution time, input length, and output length."""
 
     def __init__(self):
         self.profile_data: List[Dict[str, Any]] = []
 
     def __call__(self, func: Callable[[str], str]) -> Callable[[str], str]:
-        """Método principal do decorador"""
+        """
+        This method is called when the decorator is applied to a function.
+
+        Args:
+            func (Callable[[str], str]): The function to be decorated.
+
+        Returns:
+            Callable[[str], str]: The decorated function with profiling capabilities.
+        """
 
         @wraps(func)
         def wrapper(text: str) -> str:
@@ -50,11 +60,24 @@ class ProfilingDecorator:
         return wrapper
 
     def record_metrics(self, step_name: str, time: float, input_len: int, output_len: int) -> None:
-        """Armazena as métricas coletadas"""
+        """
+        Record the metrics for a given step.
+
+        Args:
+            step_name (str): The name of the step.
+            time (float): The time taken for the step.
+            input_len (int): The length of the input text.
+            output_len (int): The length of the output text.
+        """
         self.profile_data.append({"step": step_name, "time": time, "input_length": input_len, "output_length": output_len})
 
     def get_summary(self) -> Dict[str, Any]:
-        """Gera um resumo consolidado das métricas"""
+        """
+        This method generates a summary of the profiling data.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the summary of profiling data.
+        """
         if not self.profile_data:
             return {}
 

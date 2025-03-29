@@ -1,3 +1,5 @@
+"""This module provides a function to expand common English contractions in a given text."""
+
 import re
 
 CONTRACTIONS_MAP = {

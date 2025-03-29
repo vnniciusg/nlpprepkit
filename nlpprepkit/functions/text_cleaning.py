@@ -1,3 +1,5 @@
+"""This module provides built-in functions for text cleaning."""
+
 import re
 
 

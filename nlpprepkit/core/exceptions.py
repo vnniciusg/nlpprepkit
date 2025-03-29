@@ -1,3 +1,6 @@
+"""Custom exceptions for the NLP pipeline."""
+
+
 class PipelineError(Exception):
     """Base class for all pipeline-related exceptions."""
 

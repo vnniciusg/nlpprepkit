@@ -1,3 +1,5 @@
+"""This module provides a function to normalize unicode characters in a given text."""
+
 import unicodedata
 
 
