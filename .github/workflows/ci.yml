@@ -30,11 +30,12 @@ jobs:
       - name: Create and activate virtual environment
         run: |
           uv venv
-          source .venv/bin/activate
 
       - name: Install dependencies
         run: |
           uv add pytest
 
       - name: Run tests
-        run: pytest
+        run: |
+          source .venv/bin/activate
+          pytest
