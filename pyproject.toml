@@ -5,11 +5,8 @@ description = "Text Preprocessing Library"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "contractions>=0.1.73",
-    "emoji>=2.14.1",
     "nltk>=3.9.1",
     "tqdm>=4.67.1",
-    "unidecode>=1.2.0",
 ]
 authors = [
     { name = "vnniciusg", email = "vnniciusg@gmail.com" }
@@ -19,8 +16,7 @@ authors = [
 dev = [
     "pytest>=8.3.5",
     "setuptools>=76.0.0",
-    "twine>=6.1.0",
-    "setuptools-scm>=8.2.1",
+    "setuptools-scm>=8.0.0,<8.2.1",
 ]
 
 [tool.setuptools_scm]
@@ -30,3 +26,43 @@ version_scheme = "only-version"
 [build-system]
 requires = ["setuptools>=76.0.0", "setuptools-scm>=8.0.0"]
 build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+]
+
+
+[tool.ruff]
+
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
+line-length = 300
+indent-width = 4
