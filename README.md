@@ -1,8 +1,20 @@
 # nlpprepkit
 
-This can't be the best library for text preprocessing, but it's definitely a library!
+`nlpprepkit` is a Python library for text preprocessing, designed to simplify and accelerate the preparation of text data for natural language processing (NLP) tasks.
+
+## Features
+
+- **Text Cleaning**: Remove extra whitespace, special characters, emojis, HTML tags, URLs, numbers, and social tags.
+- **Contraction Expansion**: Expand common English contractions (e.g., "don't" → "do not").
+- **Unicode Normalization**: Normalize text to ASCII representation.
+- **Pipeline Support**: Create customizable pipelines for sequential text processing.
+- **Profiling**: Measure the execution time of each step in the pipeline.
+- **Caching**: Avoid redundant processing with built-in caching.
+- **Parallel Processing**: Process large text datasets efficiently.
 
 ## Installation
+
+Install the library using pip:
 
 ```bash
 pip install nlpprepkit
@@ -16,121 +28,61 @@ cd nlpprepkit
 pip install -e .
 ```
 
-## Features
-
-- **Flexible cleaning options**: Control which cleaning operations to apply
-- **Parallel processing**: Process large text collections efficiently with multi-core support
-- **Caching**: Avoid redundant processing with built-in caching system
-- **NLTK integration**: Easy access to stemming, lemmatization, and stopword removal
-- **Configurable**: Save and load configuration settings for reproducible workflows
-
 ## Quick Start
 
-```python
-from nlpprepkit import TextPreprocessor
-
-# Create a preprocessor with default settings
-preprocessor = TextPreprocessor()
-
-# Process a single text
-cleaned_text = preprocessor.process_text("Check out this URL: https://example.com and these numbers 12345!")
-print(cleaned_text) # Output: "check url number"
-
-# Process multiple texts in parallel
-texts = [
-    "First text with URL https://example.org",
-    "Second text with numbers 12345",
-    "Third text with emoji 😀 and contraction don't"
-]
-results = preprocessor.process_text(texts)
-```
-
-## Customizing Configuration
+### Using the Pipeline
 
 ```python
-from nlpprepkit import TextPreprocessor, CleaningConfig
+from nlpprepkit.pipeline import Pipeline
 
-# Create a custom configuration
-config = CleaningConfig(
-    expand_contractions=True,
-    lowercase=True,
-    remove_urls=True,
-    remove_newlines=True,
-    remove_numbers=True,
-    remove_punctuation=True,
-    remove_emojis=True,
-    tokenize=True,
-    remove_stopwords=True,
-    stemming=False,
-    lemmatization=True, # Only one of stemming or lemmatization can be enabled
-    normalize_unicode=True,
-    language="english",
-    custom_stopwords=["custom1", "custom2"],
-    keep_words=["important1", "important2"],
-    min_word_length=2,
-    max_word_length=15
-)
+# Define a custom processing step
+def lowercase(text):
+    return text.lower()
 
-# Create preprocessor with custom config
-preprocessor = TextPreprocessor(config)
+# Create a pipeline and add the step
+pipeline = Pipeline()
+pipeline.add_step(lowercase)
+
+# Process text
+result = pipeline.process("This is a TEST.")
+print(result)  # Output: "this is a test."
 ```
 
-## Saving and Loading Configuration
+### Text Cleaning Functions
 
 ```python
-# Save configuration to a file
-preprocessor.save_config("my_config.json")
+from nlpprepkit.functions import remove_extra_whitespace, remove_special_characters
 
-# Load configuration from a file
-preprocessor = TextPreprocessor.from_config_file("my_config.json")
+text = "This   is   a   test!!!"
+cleaned_text = remove_extra_whitespace(text)
+print(cleaned_text)  # Output: "This is a test!!!"
+
+cleaned_text = remove_special_characters(cleaned_text)
+print(cleaned_text)  # Output: "This is a test"
 ```
 
-## Caching
-
-The library includes a caching system to avoid redundant processing:
+### Expanding Contractions
 
 ```python
-# Enable caching (enabled by default)
-TextPreprocessor.enable_cache(max_size=1000)
+from nlpprepkit.functions import expand_contractions
 
-# Clear cache if needed
-TextPreprocessor.clear_cache()
+text = "I'm going to the store."
+expanded_text = expand_contractions(text)
+print(expanded_text)  # Output: "I am going to the store."
 ```
 
-## Parallel Processing
+## Running Tests
 
-```python
-# Process a large list of texts with parallel processing
-results = preprocessor.process_text(
-    large_text_list,
-    max_workers=8, # Number of parallel workers
-    batch_size=1000 # Batch size for processing
-)
+To run the tests, use `pytest`:
+
+```bash
+pytest
 ```
-
-## Available Cleaning Operations
-
-- **Expand contractions**: Convert contractions like "don't" to "do not"
-- **Lowercase**: Convert text to lowercase
-- **Remove URLs**: Remove web links from text
-- **Remove newlines**: Replace newline characters with spaces
-- **Remove numbers**: Remove digits from text
-- **Remove punctuation**: Remove punctuation marks
-- **Remove emojis**: Remove emoji characters
-- **Tokenization**: Split text into tokens
-- **Remove stopwords**: Remove common words like "the", "a", "is"
-- **Stemming/Lemmatization**: Reduce words to their root forms
-- **Unicode normalization**: Normalize accented characters
-- **Word length filtering**: Filter words by length
-
-## Supported Languages
-
-- English
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Feel free to submit a pull request or open an issue on GitHub.
 
 ## License
 
-[MIT License](LICENSE)
+This project is licensed under the [MIT License](LICENSE).
