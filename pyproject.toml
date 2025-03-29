@@ -11,6 +11,9 @@ authors = [
     { name = "vnniciusg", email = "vnniciusg@gmail.com" }
 ]
 
+[project.urls]
+repository = 'https://github.com/vnniciusg/nlpprepkit'
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.3.5",
