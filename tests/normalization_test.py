@@ -1,4 +1,4 @@
-from normalization import normalize_unicode
+from nlpprepkit.functions import normalize_unicode
 
 
 def test_normalize_unicode():

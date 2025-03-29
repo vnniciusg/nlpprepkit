@@ -1,4 +1,4 @@
-import text_cleaning as F
+import nlpprepkit.functions.text_cleaning as F
 
 
 def test_remove_extra_whitespace():

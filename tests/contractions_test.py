@@ -1,4 +1,4 @@
-from contractions import expand_contractions
+from nlpprepkit.functions import expand_contractions
 
 
 def test_expand_contractions():
