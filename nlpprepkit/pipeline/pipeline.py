@@ -4,7 +4,6 @@ It allows adding steps to the pipeline, processing text through the steps, and p
 """
 
 import pickle
-from time import perf_counter
 from functools import lru_cache
 from typing import Callable, List, Dict, Union, Any, overload
 from concurrent.futures import ThreadPoolExecutor
@@ -72,10 +71,7 @@ class Pipeline:
 
         def process_single(item: str) -> str:
             for step in self.steps:
-                start_time = perf_counter()
                 item = step(item)
-                elapsed = perf_counter() - start_time
-                self.logger.info(f"Step {step.__name__} took {elapsed:.4f} seconds. Input: {len(item)} chars → Output: {len(item)} chars")
 
             return item
 
