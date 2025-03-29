@@ -12,32 +12,32 @@ try:
 except PackageNotFoundError:
     __version__ = "0.0.0+unknown"
 
-from .preprocessor import TextPreprocessor
-from .model import CleaningConfig
-from .exceptions import *
+# from .preprocessor import TextPreprocessor
+# from .model import CleaningConfig
+# from .exceptions import *
 
 
-def __getattr__(name):
-    if name == "functions":
-        from . import functions
+# def __getattr__(name):
+#     if name == "functions":
+#         from . import functions
 
-        return functions
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+#         return functions
+#     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
-__all__ = ["TextPreprocessor", "CleaningConfig"]
+# __all__ = ["TextPreprocessor", "CleaningConfig"]
 
-from .functions import (
-    expand_contractions,
-    lowercase,
-    remove_urls,
-    remove_newlines,
-    remove_numbers,
-    normalize_unicode,
-    remove_punctuation,
-    remove_emojis,
-    remove_stopwords,
-    stemming,
-    lemmatization,
-    remove_mentions,
-)
+# from .functions import (
+#     expand_contractions,
+#     lowercase,
+#     remove_urls,
+#     remove_newlines,
+#     remove_numbers,
+#     normalize_unicode,
+#     remove_punctuation,
+#     remove_emojis,
+#     remove_stopwords,
+#     stemming,
+#     lemmatization,
+#     remove_mentions,
+# )
